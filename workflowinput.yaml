@@ -1,6 +1,6 @@
-workflowname: template_nextflow_workflow
-workflowdescription: template_nextflow_workflow
-workflowlongdescription: This is a template nextflow workflow for GNPS2
+workflowname: filesummary_workflow
+workflowdescription: filesummary_workflow
+workflowlongdescription: This is a file summary nextflow workflow for GNPS2
 workflowversion: "0.1"
 workflowfile: nf_workflow.nf
 workflowautohide: false
@@ -12,10 +12,18 @@ parameterlist:
 
     - displayname: Input Data Folder
       paramtype: fileselector
-      nf_paramname: input_spectra_folder
+      nf_paramname: input_spectra
       formplaceholder: Enter the path to data
       formvalue: ""
       targettaskfolder: input_spectra
       optional: false
       selectsinglefile: false
       folderunroll: true
+
+    - displayname: USI Files to Analyze
+      paramtype: textarea
+      nf_paramname: usi
+      formplaceholder: Enter USIs
+      formvalue: ""
+      rows: 4
+      cols: 50

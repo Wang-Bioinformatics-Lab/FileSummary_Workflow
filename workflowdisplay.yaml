@@ -1,19 +1,27 @@
-name: template_nextflow_workflow
+name: filesummary_workflow
 displayname: STUFF
 Views:
--   name: Summary List
-    displayname: Summary List
-    viewname: summarylist
+-   name: Files Summary
+    displayname: Files Summary
+    viewname: filesummary
     displaytype: datatable
     parameters:
-        filename: output/summary.tsv
+        filename: nf_output/summaryresult.tsv
         columns:
-            -   title: "View LCMS"
-                data: filename
-            -   title: "filename"
-                data: filename
+            -   title: "Visualize"
+                data: 
+            -   title: "Filename"
+                data: "Filename"
+            -   title: "Vendor"
+                data: "Vendor"
+            -   title: "Model"
+                data: "Model"
+            -   title: "MS1s"
+                data: "MS1s"
+            -   title: "MS2s"
+                data: "MS2s"
         columnDefs: '[ {"targets": 0,"data": null,"render": function ( data, type, row, meta ) {
-            return `
-            <a target="_blank" href="/dashboards/lcms?usi=mzspec:GNPS2-${task}:${encodeURIComponent(row["filename"])}">View LCMS - mzspec:GNPS2-${task}:${row["filename"]}</a>
-            `;}}]'
+        return `
+            <a target="_blank" href="https://dashboard.gnps2.org/?usi=mzspec:GNPS2:TASK-${task}-input_spectra/${row["Filename"]}">View LCMS Run</a>
+        `;}}]'
             
