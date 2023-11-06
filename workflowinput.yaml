@@ -18,7 +18,7 @@ parameterlist:
       targettaskfolder: input_spectra
       optional: false
       selectsinglefile: false
-      folderunroll: true
+      folderunroll: false
 
     - displayname: USI Files to Analyze
       paramtype: textarea

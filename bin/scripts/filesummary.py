@@ -32,14 +32,23 @@ def main():
     parser.add_argument('--parallelism', default=1, type=int, help='Parallelism')
     args = parser.parse_args()
 
-    spectra_files = glob.glob(os.path.join(args.spectra_folder, "*"))
+    spectra_files = []
+    spectra_files += glob.glob(os.path.join(args.spectra_folder, "**", "*.mzml"), recursive=True)
+    spectra_files += glob.glob(os.path.join(args.spectra_folder, "**", "*.mzML"), recursive=True)
+    spectra_files += glob.glob(os.path.join(args.spectra_folder, "**", "*.mzxml"), recursive=True)
+    spectra_files += glob.glob(os.path.join(args.spectra_folder, "**", "*.mzXML"), recursive=True)
+    spectra_files += glob.glob(os.path.join(args.spectra_folder, "**", "*.mgf"), recursive=True)
+    spectra_files += glob.glob(os.path.join(args.spectra_folder, "**", "*.MGF"), recursive=True)
+
     spectra_files.sort()
+
+    print(spectra_files)
 
     tempresults_folder = "tempresults"
     try:
         os.mkdir(tempresults_folder)
     except:
-        print("folder error")
+        print("folder make error")
 
     parameter_list = []
     for spectrum_file in spectra_files:
