@@ -6,7 +6,7 @@ Views:
     viewname: filesummary
     displaytype: datatable
     parameters:
-        filename: nf_output/summaryresult.tsv
+        filename: nf_output/merged_results.tsv
         columns:
             -   title: "Visualize"
                 data: 
