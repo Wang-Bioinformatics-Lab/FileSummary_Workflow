@@ -55,8 +55,6 @@ process syncProcess {
 }
 
 process filesummary_single {
-    publishDir "./nf_output", mode: 'copy'
-
     conda "$TOOL_FOLDER/conda_env.yml"
 
     errorStrategy 'ignore'
@@ -126,7 +124,6 @@ workflow {
     }
 
     input_spectra_ch = input_spectra_ch.map { it -> [file(params.input_spectra + "/" + it), it] }
-    input_spectra_ch.view()
 
     // File summaries
     all_summaries_ch = filesummary_single(input_spectra_ch)
