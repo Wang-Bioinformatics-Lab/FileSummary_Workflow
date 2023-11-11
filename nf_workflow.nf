@@ -38,22 +38,6 @@ process prepInputFiles {
     """
 }
 
-// Sync Process
-process syncProcess {
-    cache false
-
-    input:
-    file "input_spectra"
-    val ready
-
-    output:
-        path("input_spectra/**", type: "file")
-
-    """
-    ls
-    """
-}
-
 process filesummary_single {
     conda "$TOOL_FOLDER/conda_env.yml"
 
