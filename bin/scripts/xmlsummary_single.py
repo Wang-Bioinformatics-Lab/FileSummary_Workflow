@@ -181,22 +181,32 @@ def process_mzML(input_file, original_path, output_filename, ontology_file):
         #### Check for model/vendor
         possible_instrument_models = [x for x in allParamNames if x in model_names]
         possible_instrument_vendors = [x for x in allParamNames if x in instrument_vendor_names]
-
-        if len(possible_instrument_models) == 1:
-            instrumentConfigurationDict[key]['model'] = [possible_instrument_models[0]]
-        elif len(possible_instrument_models) > 1:
-            raise ValueError("Multiple instrument models not supported.")
         
-        if len(possible_instrument_vendors) == 1:
+        # It appears that some software uses the old mzXML tagging in userParams
+        possible_instrument_models  += [x.get('value') for x in config.findall(".//{*}userParam[@name='msModel']")]
+        possible_instrument_vendors += [x.get('value') for x in config.findall(".//{*}userParam[@name='msManufacturer']")]
+
+        if len(possible_instrument_models) >= 1:
+            instrumentConfigurationDict[key]['model'] = [possible_instrument_models[0]]
+        if len(possible_instrument_models) > 1:
+            print(f"Multiple instrument models not supported, taking the first for file {input_file}")
+        
+        if len(possible_instrument_vendors) >= 1:
             instrumentConfigurationDict[key]['vendor'] = [possible_instrument_vendors[0]]
         if len(possible_instrument_vendors) > 1:
-            raise ValueError("Multiple instrument vendors not supported.")
+            print(f"Multiple instrument vendors not supported, taking the first for file {input_file}")
         ##########################################################
         componentList = config.find(".//{*}componentList")
         if componentList is not None:
-            source = [x.get('name') for x in componentList.findall(".//{*}source//{*}cvParam")]
-            analyzer = [x.get('name') for x in componentList.findall(".//{*}analyzer//{*}cvParam")]
-            detector = [x.get('name') for x in componentList.findall(".//{*}detector//{*}cvParam")]
+            source = [x.get('name', '') for x in componentList.findall(".//{*}source//{*}cvParam")]
+            analyzer = [x.get('name', '') for x in componentList.findall(".//{*}analyzer//{*}cvParam")]
+            detector = [x.get('name', '') for x in componentList.findall(".//{*}detector//{*}cvParam")]
+            
+            # It appears that some software uses the old mzXML tagging in userParams
+            source   += [x.get('value', '') for x in componentList.findall(".//{*}source//{*}userParam[@name='msIonisation']")]
+            analyzer += [x.get('value', '') for x in componentList.findall(".//{*}analyzer//{*}userParam[@name='msMassAnalyzer']")]
+            detector += [x.get('value', '') for x in componentList.findall(".//{*}detector//{*}userParam[@name='msDetector']")]
+
         
             if len(source) > 0 :
                 instrumentConfigurationDict[key]['source'] = source
@@ -212,7 +222,11 @@ def process_mzML(input_file, original_path, output_filename, ontology_file):
     for key in instrumentConfigurationDict.keys():
         for field in instrumentConfigurationDict[key].keys():
             print(instrumentConfigurationDict[key][field])
-            instrumentConfigurationDict[key][field] = ';'.join(instrumentConfigurationDict[key][field])
+            if instrumentConfigurationDict[key][field] is not None:
+                instrumentConfigurationDict[key][field] = [x for x in instrumentConfigurationDict[key][field] if x is not None]
+                instrumentConfigurationDict[key][field] = ';'.join(instrumentConfigurationDict[key][field])
+            else: 
+                 instrumentConfigurationDict[key][field] = ''
     # Join together each field by '|'. Note that the numner of '|' will be the same for each field, regardless of whether there is data
     output_dictionary['Ion_Source'] = '|'.join([instrumentConfigurationDict[x].get('source', '') for x in instrumentConfigurationDict.keys()])
     output_dictionary['Mass_Analyzer'] = '|'.join([instrumentConfigurationDict[x].get('analyzer', '') for x in instrumentConfigurationDict.keys()])
