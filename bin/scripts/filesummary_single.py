@@ -1,17 +1,8 @@
 #!/usr/bin/python
 
-
-import sys
-import getopt
 import os
-import json
 import argparse
-import uuid
-from collections import defaultdict
 
-import ming_parallel_library
-import csv
-import re
 import pandas as pd
 import glob
 
@@ -51,18 +42,16 @@ def main():
             for result in result_list:
                 output_dict = {}
                 output_dict["Filename"] = args.relative_spectrum_path
-                output_dict["Vendor"] = result["Vendor"]
-                output_dict["Model"] = result["Model"]
-                output_dict["MS1s"] = result["MS1s"]
-                output_dict["MS2s"] = result["MS2s"]
+                output_dict["Vendor"]   = result["Vendor"]
+                output_dict["Model"]    = result["Model"]
+                output_dict["MS1s"]     = result["MS1s"]
+                output_dict["MS2s"]     = result["MS2s"]
                 full_result_list.append(output_dict)
         except:
             print("Error", input_file)
 
     if len(full_result_list) > 0:
         pd.DataFrame(full_result_list).to_csv(args.result_file, sep="\t", index=False)
-
-
 
 if __name__ == "__main__":
     main()
