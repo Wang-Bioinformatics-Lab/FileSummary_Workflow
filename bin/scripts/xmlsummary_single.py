@@ -40,11 +40,15 @@ def process_MGF(input_file, original_path, output_filename):
     # Iterate over the scans and count the number of MS levels
     ms_level_counts = [0]*10
     for scan in parsed_mgf:
-        scan_ms_level = int(scan['params']['mslevel'])
+        scan_ms_level = scan['params'].get('mslevel')
+        if scan_ms_level is None:
+            # TODO: Add an unknown ms level entry
+            continue
+        scan_ms_level = int(scan_ms_level)
         if scan_ms_level >= 10:
             ms_level_counts[-1] += 1
         else:
-            ms_level_counts[int(scan['mslevel'])-1] += 1
+            ms_level_counts[scan_ms_level-1] += 1
             
     for mslevel in range(1,10):
         output_dictionary[f"MS{mslevel}s"] = ms_level_counts[mslevel-1]
