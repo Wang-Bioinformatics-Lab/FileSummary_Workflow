@@ -34,7 +34,8 @@ process prepInputFiles {
     $input_parameters \
     . \
     output_summary.tsv \
-    --cache_directory $cache_directory
+    --cache_directory $cache_directory \
+    --nestfiles
     """
 }
 
