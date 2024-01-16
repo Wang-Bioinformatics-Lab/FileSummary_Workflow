@@ -25,14 +25,13 @@ process prepInputFiles {
 
     output:
     val true
-    file "*.mzML" optional true
-    file "*.mzXML" optional true
-    file "*.mgf" optional true 
+    file "usi_downloads"
 
     """
+    mkdir usi_downloads
     python $TOOL_FOLDER/scripts/download_public_data_usi.py \
     $input_parameters \
-    . \
+    usi_downloads \
     output_summary.tsv \
     --cache_directory $cache_directory \
     --nestfiles
@@ -100,12 +99,12 @@ process mergeResults {
 
 workflow {
     // Downloads input data
-    (_download_ready, _, _, _) = prepInputFiles(Channel.fromPath(params.download_usi_filename), Channel.fromPath(params.cache_directory))
+    (_download_ready, _) = prepInputFiles(Channel.fromPath(params.download_usi_filename), Channel.fromPath(params.cache_directory))
 
     // Sychronize input data
     if(_download_ready) {
         // Preps input spectrum files
-        input_spectra_ch = Channel.fromPath(params.input_spectra + "/**", relative: true)
+        input_spectra_ch = Channel.fromPath(params.input_spectra + "/**/*", relative: true)
     }
 
     input_spectra_ch = input_spectra_ch.map { it -> [file(params.input_spectra + "/" + it), it] }
