@@ -22,6 +22,6 @@ Views:
                 data: "MS2s"
         columnDefs: '[ {"targets": 0,"data": null,"render": function ( data, type, row, meta ) {
         return `
-            <a target="_blank" href="https://dashboard.gnps2.org/?usi=mzspec:GNPS2:TASK-${task}-input_spectra/${row["Filename"]}">View LCMS Run</a>
+            <a target="_blank" href="https://dashboard.gnps2.org/?usi=mzspec:GNPS2:TASK-${task}-${row["Filename"]}">View LCMS Run</a>
         `;}}]'
             

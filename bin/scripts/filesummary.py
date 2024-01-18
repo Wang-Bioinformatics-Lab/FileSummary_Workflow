@@ -21,8 +21,17 @@ def summary_wrapper(search_param_dict):
 def summary_files(spectrum_file, tempresults_folder, args):
     summary_filename = os.path.join(tempresults_folder, os.path.basename(spectrum_file) + ".summary")
     cmd = "export LC_ALL=C && {} {} -x \"run_summary delimiter=tab\" > {}".format(args.msaccess_binary, spectrum_file, summary_filename)
+    
     print(cmd)
+
     os.system(cmd)
+
+    # We should rewrite it such that the filenames are full relative paths
+    results_df = pd.read_csv(summary_filename, sep="\t")
+    results_df["Filename"] = spectrum_file
+
+    results_df.to_csv(summary_filename, sep="\t", index=False)
+
 
 def main():
     parser = argparse.ArgumentParser(description='Running library search parallel')
