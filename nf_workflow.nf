@@ -78,7 +78,28 @@ process filesummary_folder {
     $TOOL_FOLDER/binaries/msaccess \
     --parallelism 24
     """
+}
 
+process includeUSI {
+    publishDir "./nf_output", mode: 'copy'
+
+    conda "$TOOL_FOLDER/conda_env.yml"
+
+    input:
+    file input_summary
+    file usi_summary
+    file input_spectra
+
+    output:
+    file 'summaryresult_with_usi.tsv'
+
+    """
+    python $TOOL_FOLDER/scripts/add_usi.py \
+    $input_summary \
+    $usi_summary \
+    $input_spectra \
+    summaryresult_with_usi.tsv
+    """
 }
 
 process filesummary_single {
@@ -139,10 +160,13 @@ process mergeResults {
 
 workflow {
     // Downloads input data
-    (_download_ready, _, _) = prepInputFiles(Channel.fromPath(params.download_usi_filename), Channel.fromPath(params.cache_directory))
+    (_download_ready, _, _usi_summary_ch) = prepInputFiles(Channel.fromPath(params.download_usi_filename), Channel.fromPath(params.cache_directory))
 
     // Doing it all
-    filesummary_folder(Channel.fromPath(params.input_spectra), _download_ready)
+    _summary_results_ch = filesummary_folder(Channel.fromPath(params.input_spectra), _download_ready)
+
+    // Enriching with USI
+    _results_with_usi_ch = includeUSI(_summary_results_ch, _usi_summary_ch, Channel.fromPath(params.input_spectra))
 
     // Below we tried doing it in parallel, but its got problems with the USI downloads
 
