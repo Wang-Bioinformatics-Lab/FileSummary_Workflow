@@ -26,13 +26,14 @@ process prepInputFiles {
     output:
     val true
     file "usi_downloads"
+    file "usi_summary.tsv"
 
     """
     mkdir usi_downloads
     python $TOOL_FOLDER/scripts/download_public_data_usi.py \
     $input_parameters \
     usi_downloads \
-    output_summary.tsv \
+    usi_summary.tsv \
     --cache_directory $cache_directory \
     --nestfiles
     """
@@ -138,7 +139,7 @@ process mergeResults {
 
 workflow {
     // Downloads input data
-    (_download_ready, _) = prepInputFiles(Channel.fromPath(params.download_usi_filename), Channel.fromPath(params.cache_directory))
+    (_download_ready, _, _) = prepInputFiles(Channel.fromPath(params.download_usi_filename), Channel.fromPath(params.cache_directory))
 
     // Doing it all
     filesummary_folder(Channel.fromPath(params.input_spectra), _download_ready)
