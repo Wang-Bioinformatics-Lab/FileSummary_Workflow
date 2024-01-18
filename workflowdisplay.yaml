@@ -6,12 +6,14 @@ Views:
     viewname: filesummary
     displaytype: datatable
     parameters:
-        filename: nf_output/merged_results.tsv
+        filename: nf_output/summaryresult_with_usi.tsv
         columns:
             -   title: "Visualize"
                 data: 
             -   title: "Filename"
                 data: "Filename"
+            -   title: "Public USI"
+                data: "usi"
             -   title: "Vendor"
                 data: "Vendor"
             -   title: "Model"
