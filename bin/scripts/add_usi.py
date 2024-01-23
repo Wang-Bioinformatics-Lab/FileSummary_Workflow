@@ -13,7 +13,11 @@ def main():
     args = parser.parse_args()
 
     #reading input files
-    df = pd.read_csv(args.input_summary, sep="\t")
+    try:
+        df = pd.read_csv(args.input_summary, sep="\t")
+    except:
+        pd.DataFrame().to_csv(args.output_summary, sep="\t", index=False)
+        exit(0)
 
     try:
         df_usi = pd.read_csv(args.input_usi_summary, sep="\t")
