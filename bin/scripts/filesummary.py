@@ -95,7 +95,10 @@ def main():
     # Adding in missing filenames
     summary_df = pd.DataFrame(full_result_list)
 
-    files_set = set(summary_df["Filename"].tolist())
+    try:
+        files_set = set(summary_df["Filename"].tolist())
+    except:
+        files_set = set()
 
     for spectrum_file in spectra_files:
         if spectrum_file not in files_set:

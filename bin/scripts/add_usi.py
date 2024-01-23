@@ -14,7 +14,12 @@ def main():
 
     #reading input files
     df = pd.read_csv(args.input_summary, sep="\t")
-    df_usi = pd.read_csv(args.input_usi_summary, sep="\t")
+
+    try:
+        df_usi = pd.read_csv(args.input_usi_summary, sep="\t")
+    except:
+        df.to_csv(args.output_summary, sep="\t", index=False)
+        exit(0)
 
     # clean up the summary to make it relative to the path to spectra, using pathlib
     from pathlib import Path
