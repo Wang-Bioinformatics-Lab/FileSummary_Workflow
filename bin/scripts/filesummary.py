@@ -92,7 +92,24 @@ def main():
         except:
             print("Error", input_file)
 
-    pd.DataFrame(full_result_list).to_csv(args.result_file, sep="\t", index=False)
+    # Adding in missing filenames
+    summary_df = pd.DataFrame(full_result_list)
+
+    files_set = set(summary_df["Filename"].tolist())
+
+    for spectrum_file in spectra_files:
+        if spectrum_file not in files_set:
+            output_dict = {}
+            output_dict["Filename"] = spectrum_file
+            output_dict["Vendor"] = "Unknown"
+            output_dict["Model"] = "Unknown"
+            output_dict["MS1s"] = -1
+            output_dict["MS2s"] = -1
+            
+            full_result_list.append(output_dict)
+
+    summary_df = pd.DataFrame(full_result_list)
+    summary_df.to_csv(args.result_file, sep="\t", index=False)
 
 
 

@@ -27,3 +27,17 @@ Views:
             <a target="_blank" href="https://dashboard.gnps2.org/?usi=mzspec:GNPS2:TASK-${task}-${row["Filename"]}">View LCMS Run</a>
         `;}}]'
             
+-   name: USI Download Summary
+    displayname: USI Download Summary
+    viewname: usisummary
+    displaytype: datatable
+    parameters:
+        filename: input_spectra/usi_summary.tsv
+        columns:
+            -   title: "Public USI"
+                data: "usi"
+            -   title: "target_path"
+                data: "target_path"
+            -   title: "status"
+                data: "status"
+            
