@@ -41,19 +41,29 @@ def main():
     parser.add_argument('result_file', help='output folder for parameters')
     parser.add_argument('msaccess_binary', help='output folder for parameters')
     parser.add_argument('--parallelism', default=1, type=int, help='Parallelism')
+    parser.add_argument('--usi_folder', default=None, help='Folder for USI Files')
     args = parser.parse_args()
 
-    spectra_files = []
-    spectra_files += glob.glob(os.path.join(args.spectra_folder, "**", "*.mzml"), recursive=True)
-    spectra_files += glob.glob(os.path.join(args.spectra_folder, "**", "*.mzML"), recursive=True)
-    spectra_files += glob.glob(os.path.join(args.spectra_folder, "**", "*.mzxml"), recursive=True)
-    spectra_files += glob.glob(os.path.join(args.spectra_folder, "**", "*.mzXML"), recursive=True)
-    spectra_files += glob.glob(os.path.join(args.spectra_folder, "**", "*.mgf"), recursive=True)
-    spectra_files += glob.glob(os.path.join(args.spectra_folder, "**", "*.MGF"), recursive=True)
+    valid_extensions = [".mzml", ".mzxml", ".mgf"]
+
+    spectra_files = glob.glob(os.path.join(args.spectra_folder, "**", "*"), recursive=True)
+    spectra_files = [x for x in spectra_files if os.path.splitext(x)[-1].lower() in valid_extensions]
+
+    if args.usi_folder is not None:
+        usi_spectra_files = glob.glob(os.path.join(args.usi_folder, "**", "*"), recursive=True)
+
+        usi_spectra_files = [x for x in usi_spectra_files if os.path.splitext(x)[-1].lower() in valid_extensions]
+
+        # Now we should remove the spectra files that are in the USI folder
+        usi_spectra_files_set = [os.path.join(args.spectra_folder, x) for x in usi_spectra_files]
+        usi_spectra_files_set = set(usi_spectra_files_set)
+        spectra_files = [x for x in spectra_files if x not in usi_spectra_files_set]
+
+        spectra_files = usi_spectra_files + spectra_files
 
     spectra_files.sort()
 
-    print(spectra_files)
+    print("Number of Files", len(spectra_files))
 
     tempresults_folder = "tempresults"
     try:
@@ -110,6 +120,12 @@ def main():
             output_dict["MS2s"] = -1
             
             full_result_list.append(output_dict)
+
+    # Fixing all the file paths to make sure they start with the spectra folder
+    for result in full_result_list:
+        # Checking if it starts with spectra_folder
+        if not result["Filename"].startswith(args.spectra_folder):
+            result["Filename"] = os.path.join(args.spectra_folder, result["Filename"])
 
     summary_df = pd.DataFrame(full_result_list)
     summary_df.to_csv(args.result_file, sep="\t", index=False)

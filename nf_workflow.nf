@@ -68,6 +68,7 @@ process filesummary_folder {
 
     input:
     file input_folder
+    file input_usi_folder
     val ready_flag
 
     output:
@@ -78,7 +79,8 @@ process filesummary_folder {
     "$input_folder" \
     merged_results.tsv \
     $TOOL_FOLDER/binaries/msaccess \
-    --parallelism 24
+    --parallelism 24 \
+    --usi_folder "$input_usi_folder"
     """
 }
 
@@ -162,10 +164,12 @@ process mergeResults {
 
 workflow {
     // Downloads input data
-    (_download_ready, _, _usi_summary_ch) = prepInputFiles(Channel.fromPath(params.download_usi_filename), Channel.fromPath(params.cache_directory))
+    (_download_ready, _usi_downloads_ch, _usi_summary_ch) = prepInputFiles(Channel.fromPath(params.download_usi_filename), Channel.fromPath(params.cache_directory))
 
-    // Doing it all
-    _summary_results_ch = filesummary_folder(Channel.fromPath(params.input_spectra), _download_ready)
+    // Doing it on everything
+    _summary_results_ch = filesummary_folder(Channel.fromPath(params.input_spectra), _usi_downloads_ch, _download_ready)
+
+
 
     // Enriching with USI
     _results_with_usi_ch = includeUSI(_summary_results_ch, _usi_summary_ch, Channel.fromPath(params.input_spectra))
