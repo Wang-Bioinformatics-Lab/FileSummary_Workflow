@@ -51,10 +51,10 @@ def main():
             for result in result_list:
                 output_dict = {}
                 output_dict["Filename"] = args.relative_spectrum_path
-                output_dict["Vendor"] = result["Vendor"]
-                output_dict["Model"] = result["Model"]
-                output_dict["MS1s"] = result["MS1s"]
-                output_dict["MS2s"] = result["MS2s"]
+                output_dict["Vendor"] = result.get("Vendor", "Unknown")
+                output_dict["Model"] = result.get("Model", "Unknown")
+                output_dict["MS1s"] = result.get("MS1s", 0)
+                output_dict["MS2s"] = result.get("MS2s", 0)
                 full_result_list.append(output_dict)
         except:
             print("Error", input_file)
