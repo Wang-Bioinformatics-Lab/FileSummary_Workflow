@@ -37,7 +37,7 @@ process prepInputFiles {
     usi_downloads \
     usi_summary.tsv \
     --cache_directory $cache_directory \
-    --nestfiles \
+    --nestfiles nest \
     --existing_dataset_directory /data/datasets/server
     """
 }
