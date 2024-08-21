@@ -32,7 +32,7 @@ process prepInputFiles {
     mkdir usi_downloads
     touch usi_summary.tsv
 
-    python $TOOL_FOLDER/scripts/download_public_data_usi.py \
+    python $TOOL_FOLDER/scripts/downloadpublicdata/bin/download_public_data_usi.py \
     $input_parameters \
     usi_downloads \
     usi_summary.tsv \
