@@ -20,7 +20,7 @@ def summary_wrapper(search_param_dict):
 
 def summary_files(spectrum_file, tempresults_folder, args):
     summary_filename = os.path.join(tempresults_folder, "{}.summary".format(str(uuid.uuid4())))
-    cmd = "export LC_ALL=C && {} {} -x \"run_summary delimiter=tab\" > {}".format(args.msaccess_binary, spectrum_file, summary_filename)
+    cmd = "export LC_ALL=C && {} \"{}\" -x \"run_summary delimiter=tab\" > {}".format(args.msaccess_binary, spectrum_file, summary_filename)
     
     print(cmd)
 
