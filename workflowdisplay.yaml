@@ -6,12 +6,14 @@ Views:
     viewname: filesummary
     displaytype: datatable
     parameters:
-        filename: nf_output/merged_results.tsv
+        filename: nf_output/summaryresult_with_usi.tsv
         columns:
             -   title: "Visualize"
                 data: 
             -   title: "Filename"
                 data: "Filename"
+            -   title: "Public USI"
+                data: "usi"
             -   title: "Vendor"
                 data: "Vendor"
             -   title: "Model"
@@ -22,6 +24,20 @@ Views:
                 data: "MS2s"
         columnDefs: '[ {"targets": 0,"data": null,"render": function ( data, type, row, meta ) {
         return `
-            <a target="_blank" href="https://dashboard.gnps2.org/?usi=mzspec:GNPS2:TASK-${task}-input_spectra/${row["Filename"]}">View LCMS Run</a>
+            <a target="_blank" href="https://dashboard.gnps2.org/?usi=mzspec:GNPS2:TASK-${task}-${row["Filename"]}">View LCMS Run</a>
         `;}}]'
+            
+-   name: USI Download Summary
+    displayname: USI Download Summary
+    viewname: usisummary
+    displaytype: datatable
+    parameters:
+        filename: input_spectra/usi_summary.tsv
+        columns:
+            -   title: "Public USI"
+                data: "usi"
+            -   title: "target_path"
+                data: "target_path"
+            -   title: "status"
+                data: "status"
             

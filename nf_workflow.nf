@@ -27,37 +27,103 @@ process prepInputFiles {
 
     output:
     val true
-    file "*.mzML" optional true
-    file "*.mzXML" optional true
-    file "*.mgf" optional true 
+    file "usi_downloads"
+    file "usi_summary.tsv"
 
     """
-    python $TOOL_FOLDER/scripts/download_public_data_usi.py \
+    mkdir usi_downloads
+    touch usi_summary.tsv
+
+    python $TOOL_FOLDER/scripts/downloadpublicdata/bin/download_public_data_usi.py \
     $input_parameters \
-    . \
-    output_summary.tsv \
-    --cache_directory $cache_directory
+    usi_downloads \
+    usi_summary.tsv \
+    --cache_directory $cache_directory \
+    --nestfiles nest \
+    --existing_dataset_directory /data/datasets/server
     """
 }
 
-process msaccess_summary {
+process listInputFiles {
+
     conda "$TOOL_FOLDER/conda_env.yml"
 
-    errorStrategy 'ignore'
-
-    cache 'lenient'
-
     input:
-    tuple file(input_spectrum_file), val(relative_path)
+    val ready_flag
+    file input_files_folder
 
     output:
-    file 'summaryresult.tsv' optional true
+    path "${input_files_folder}/**/*"
 
     """
-    python $TOOL_FOLDER/scripts/filesummary_single.py \
-    "$input_spectrum_file" \
-    "$relative_path" \
-    summaryresult.tsv \
+    echo $input_files_folder
+    """
+
+
+}
+
+process filesummary_folder {
+    publishDir "./nf_output", mode: 'copy'
+
+    conda "$TOOL_FOLDER/conda_env.yml"
+
+    cache "lenient"
+
+    input:
+    file input_folder
+    file input_usi_folder
+    val ready_flag
+
+    output:
+    file 'merged_results.tsv' optional true
+
+    """
+    python $TOOL_FOLDER/scripts/filesummary.py \
+    "$input_folder" \
+    merged_results.tsv \
+    $TOOL_FOLDER/binaries/msaccess \
+    --parallelism 24 \
+    --usi_folder "$input_usi_folder"
+    """
+}
+
+process includeUSI {
+    publishDir "./nf_output", mode: 'copy'
+
+    conda "$TOOL_FOLDER/conda_env.yml"
+
+    input:
+    file input_summary
+    file usi_summary
+    file input_spectra
+
+    output:
+    file 'summaryresult_with_usi.tsv'
+
+    """
+    python $TOOL_FOLDER/scripts/add_usi.py \
+    $input_summary \
+    $usi_summary \
+    $input_spectra \
+    summaryresult_with_usi.tsv
+    """
+}
+
+process filesummary_single {
+    publishDir "./nf_output", mode: 'copy'
+
+    conda "$TOOL_FOLDER/conda_env.yml"
+
+    input:
+    file inputSpectra
+    val ready
+
+    output:
+    file 'summaryresult.tsv'
+
+    """
+    python $TOOL_FOLDER/scripts/filesummary.py \
+    $inputSpectra summaryresult.tsv \
     $TOOL_FOLDER/binaries/msaccess
     """
 }
@@ -136,29 +202,29 @@ process mergeResults {
 
 workflow {
     // Downloads input data
-    (_download_ready, _, _, _) = prepInputFiles(Channel.fromPath(params.download_usi_filename), Channel.fromPath(params.cache_directory))
+    (_download_ready, _usi_downloads_ch, _usi_summary_ch) = prepInputFiles(Channel.fromPath(params.download_usi_filename), Channel.fromPath(params.cache_directory))
 
-    // Sychronize input data
-    if (_download_ready) {
-        // Preps input spectrum files
-        input_spectra_ch = Channel.fromPath(params.input_spectra + "/**", relative: true)
-    }
+    // Doing it on everything
+    _summary_results_ch = filesummary_folder(Channel.fromPath(params.input_spectra), _usi_downloads_ch, _download_ready)
 
-    // Escape '[' and ']' which causes invalid range error in the channel
-        input_spectra_ch = input_spectra_ch.map { it -> [file("${params.input_spectra}/${it}".replaceAll('\\[', '\\\\[').replaceAll('\\]', '\\\\]')), "${it}".replaceAll('\\[', '\\\\[').replaceAll('\\]', '\\\\]')]}
+
+
+    // Enriching with USI
+    _results_with_usi_ch = includeUSI(_summary_results_ch, _usi_summary_ch, Channel.fromPath(params.input_spectra))
+
+    // Below we tried doing it in parallel, but its got problems with the USI downloads
+
+    // Listing all the input files
+    //input_spectra_ch = listInputFiles(_download_ready, Channel.fromPath(params.input_spectra))
+
+    //input_spectra_ch = input_spectra_ch.map { it -> [file(params.input_spectra + "/" + it), it] }
 
     // File summaries
-    if (params.xml_parser) {
-        ontology_file = collect_obonet()   
-        all_summaries_ch = xml_summary(input_spectra_ch, ontology_file)
-    } else {
-        // input_spectra_ch = input_spectra_ch.map { it -> [file(params.input_spectra + "/" + it), it] }
-        all_summaries_ch = msaccess_summary(input_spectra_ch)
-    }
+    //all_summaries_ch = filesummary_single(input_spectra_ch)
 
     // Merging together
-    chunked_results = chunkResults(all_summaries_ch.buffer(size: 1000, remainder: true))
+    //chunked_results = chunkResults(all_summaries_ch.buffer(size: 1000, remainder: true))
        
     // Collect all the batched results and merge them at the end
-    merged_results = mergeResults(chunked_results.collect())
+    //merged_results = mergeResults(chunked_results.collect())
 }
