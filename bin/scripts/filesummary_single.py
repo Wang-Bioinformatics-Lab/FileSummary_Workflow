@@ -1,17 +1,8 @@
 #!/usr/bin/python
 
-
-import sys
-import getopt
 import os
-import json
 import argparse
-import uuid
-from collections import defaultdict
 
-import ming_parallel_library
-import csv
-import re
 import pandas as pd
 import glob
 
@@ -55,14 +46,13 @@ def main():
                 output_dict["Model"] = result.get("Model", "Unknown")
                 output_dict["MS1s"] = result.get("MS1s", 0)
                 output_dict["MS2s"] = result.get("MS2s", 0)
+
                 full_result_list.append(output_dict)
         except:
             print("Error", input_file)
 
     if len(full_result_list) > 0:
         pd.DataFrame(full_result_list).to_csv(args.result_file, sep="\t", index=False)
-
-
 
 if __name__ == "__main__":
     main()

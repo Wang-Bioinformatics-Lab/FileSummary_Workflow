@@ -11,6 +11,8 @@ params.OMETAPARAM_YAML = "job_parameters.yaml"
 params.download_usi_filename = params.OMETAPARAM_YAML // This can be changed if you want to run locally
 params.cache_directory = "data/cache"
 
+params.xml_parser = true
+
 TOOL_FOLDER = "$baseDir/bin"
 
 // downloading all the files
@@ -126,11 +128,46 @@ process filesummary_single {
     """
 }
 
+// Collect ontology file for parsing mzML files 
+process collect_obonet {
+    cache 'lenient'
+    memory '4 GB'
+    output:
+    path "psi-ms.obo"
+
+    """
+    wget https://raw.githubusercontent.com/HUPO-PSI/psi-ms-CV/master/psi-ms.obo
+    """
+}
+
+process xml_summary {
+    conda "$TOOL_FOLDER/conda_env.yml"
+
+    errorStrategy 'ignore'
+
+    cache 'lenient'
+
+    input:
+    tuple file(input_spectrum_file), val(relative_path)
+    path(ontology_file)
+
+    output:
+    file 'summaryresult.tsv' optional true
+
+    """
+    python $TOOL_FOLDER/scripts/xmlsummary_single.py \
+    --input_spectrum_file $input_spectrum_file \
+    --original_path "$relative_path" \
+    --result_file summaryresult.tsv \
+    --ontology_file $ontology_file
+    """    
+}
+
 process chunkResults {
     conda "$TOOL_FOLDER/conda_env.yml"
 
     input:
-    path to_merge, stageAs: './results/chunked_???????.tsv' // To avoid naming collisions
+    path to_merge, stageAs: './results/chunked_*.tsv' // To avoid naming collisions
 
     output:
     path "batched_results.tsv" optional true
@@ -150,7 +187,7 @@ process mergeResults {
     conda "$TOOL_FOLDER/conda_env.yml"
 
     input:
-    path 'batched_results.tsv', stageAs: './results/batched_results_???????.tsv' // Will automatically number inputs to avoid name collisions
+    path 'batched_results.tsv', stageAs: './results/batched_results_*.tsv' // Will automatically number inputs to avoid name collisions
 
     output:
     path 'merged_results.tsv'
