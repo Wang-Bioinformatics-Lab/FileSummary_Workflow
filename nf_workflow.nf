@@ -147,6 +147,9 @@ process xml_summary {
 
     cache 'lenient'
 
+    cpus 1
+    memory '3906 MB'
+
     input:
     tuple file(input_spectrum_file), val(relative_path)
     path(ontology_file)
@@ -206,8 +209,6 @@ workflow {
 
     // Doing it on everything
     _summary_results_ch = filesummary_folder(Channel.fromPath(params.input_spectra), _usi_downloads_ch, _download_ready)
-
-
 
     // Enriching with USI
     _results_with_usi_ch = includeUSI(_summary_results_ch, _usi_summary_ch, Channel.fromPath(params.input_spectra))
