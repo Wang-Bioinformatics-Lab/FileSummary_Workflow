@@ -18,7 +18,10 @@ HEADERS = ["Filename",
             "Vendor",
             "MS1s",
             "MS2s",
-            "MS3+"] 
+            "MS3+",   # Final entry should be f"MS{MAX_MS_LEVEL}+" (as for now must be hardcoded)
+            # "Pos_Scan_Count",   # TODO
+            # "Neg_Scan_Count",   # TODO
+            ]
 
 def process_MGF(input_file, original_path, output_filename):
     parsed_mgf = mgf.read(open(input_file, 'r'))
@@ -32,15 +35,15 @@ def process_MGF(input_file, original_path, output_filename):
     output_dictionary['Vendor'] = ''
     
     # Iterate over the scans and count the number of MS levels
-    ms_level_counts = [0]*10
+    ms_level_counts = [0 for _ in range(MAX_MS_LEVEL)]
     for scan in parsed_mgf:
         scan_ms_level = scan['params'].get('mslevel')
         if scan_ms_level is None:
             # TODO: Add an unknown ms level entry
             continue
         scan_ms_level = int(scan_ms_level)
-        if scan_ms_level >= 10:
-            ms_level_counts[-1] += 1
+        if scan_ms_level >= MAX_MS_LEVEL:
+            ms_level_counts[MAX_MS_LEVEL-1] += 1
         else:
             ms_level_counts[scan_ms_level-1] += 1
             
