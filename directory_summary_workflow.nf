@@ -3,6 +3,8 @@ nextflow.enable.dsl=2
 
 params.input_spectra = "./data"
 
+params.xml_parse = false
+
 // Workflow Boiler Plate
 params.OMETALINKING_YAML = "flow_filelinking.yaml"
 params.OMETAPARAM_YAML = "job_parameters.yaml"
@@ -11,9 +13,10 @@ params.OMETAPARAM_YAML = "job_parameters.yaml"
 params.download_usi_filename = params.OMETAPARAM_YAML // This can be changed if you want to run locally
 params.cache_directory = "data/cache"
 
-params.xml_parser = true
-
 TOOL_FOLDER = "$baseDir/bin"
+
+include {xml_summary} from './nf_workflow.nf'
+include {collect_obonet} from './nf_workflow.nf'
 
 // downloading all the files
 process prepInputFiles {
@@ -128,49 +131,11 @@ process filesummary_single {
     """
 }
 
-// Collect ontology file for parsing mzML files 
-process collect_obonet {
-    cache 'lenient'
-    memory '4 GB'
-    output:
-    path "psi-ms.obo"
-
-    """
-    wget https://raw.githubusercontent.com/HUPO-PSI/psi-ms-CV/master/psi-ms.obo
-    """
-}
-
-process xml_summary {
-    conda "$TOOL_FOLDER/conda_env.yml"
-
-    errorStrategy 'ignore'
-
-    cache 'lenient'
-
-    cpus 1
-    memory '3906 MB'
-
-    input:
-    tuple file(input_spectrum_file), val(relative_path)
-    path(ontology_file)
-
-    output:
-    file 'summaryresult.tsv' optional true
-
-    """
-    python $TOOL_FOLDER/scripts/xmlsummary_single.py \
-    --input_spectrum_file $input_spectrum_file \
-    --original_path "$relative_path" \
-    --result_file summaryresult.tsv \
-    --ontology_file $ontology_file
-    """    
-}
-
 process chunkResults {
     conda "$TOOL_FOLDER/conda_env.yml"
 
     input:
-    path to_merge, stageAs: './results/chunked_*.tsv' // To avoid naming collisions
+    path to_merge, stageAs: './results/chunked_???????.tsv' // To avoid naming collisions
 
     output:
     path "batched_results.tsv" optional true
@@ -190,7 +155,7 @@ process mergeResults {
     conda "$TOOL_FOLDER/conda_env.yml"
 
     input:
-    path 'batched_results.tsv', stageAs: './results/batched_results_*.tsv' // Will automatically number inputs to avoid name collisions
+    path 'batched_results.tsv', stageAs: './results/batched_results_???????.tsv' // Will automatically number inputs to avoid name collisions
 
     output:
     path 'merged_results.tsv'
@@ -204,28 +169,23 @@ process mergeResults {
 
 
 workflow {
-    // Downloads input data
-    (_download_ready, _usi_downloads_ch, _usi_summary_ch) = prepInputFiles(Channel.fromPath(params.download_usi_filename), Channel.fromPath(params.cache_directory))
-
-    // Doing it on everything
-    _summary_results_ch = filesummary_folder(Channel.fromPath(params.input_spectra), _usi_downloads_ch, _download_ready)
-
-    // Enriching with USI
-    _results_with_usi_ch = includeUSI(_summary_results_ch, _usi_summary_ch, Channel.fromPath(params.input_spectra))
-
-    // Below we tried doing it in parallel, but its got problems with the USI downloads
-
-    // Listing all the input files
-    //input_spectra_ch = listInputFiles(_download_ready, Channel.fromPath(params.input_spectra))
-
-    //input_spectra_ch = input_spectra_ch.map { it -> [file(params.input_spectra + "/" + it), it] }
+    mzML_ch = Channel.fromPath(params.input_spectra + "/**/*.mzML")
+    mzXML_ch = Channel.fromPath(params.input_spectra + "/**/*.mzXML")
+    input_spectra_ch = mzML_ch.concat(mzXML_ch)
+    // Create tuple of file, value
+    input_spectra_ch = input_spectra_ch.map { [it, it.toString()] }
 
     // File summaries
-    //all_summaries_ch = filesummary_single(input_spectra_ch)
+    if (params.xml_parse) {
+        ontology_file = collect_obonet()   
+        all_summaries_ch = xml_summary(input_spectra_ch, ontology_file)
+    } else {
+        all_summaries_ch = filesummary_single(true, input_spectra_ch)
+    }
 
     // Merging together
-    //chunked_results = chunkResults(all_summaries_ch.buffer(size: 1000, remainder: true))
+    chunked_results = chunkResults(all_summaries_ch.buffer(size: 1000, remainder: true))
        
     // Collect all the batched results and merge them at the end
-    //merged_results = mergeResults(chunked_results.collect())
+    merged_results = mergeResults(chunked_results.collect())
 }

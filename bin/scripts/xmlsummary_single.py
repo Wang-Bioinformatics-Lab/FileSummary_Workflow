@@ -7,6 +7,7 @@ import csv
 import os
 import sys
 
+MAX_MS_LEVEL = 3
 
 HEADERS = ["Filename",
             "Original_Path",
@@ -17,14 +18,10 @@ HEADERS = ["Filename",
             "Vendor",
             "MS1s",
             "MS2s",
-            "MS3s",
-            "MS4s",
-            "MS5s",
-            "MS6s",
-            "MS7s",
-            "MS8s",
-            "MS9s",
-            "MS10+"] 
+            "MS3+",   # Final entry should be f"MS{MAX_MS_LEVEL}+" (as for now must be hardcoded)
+            # "Pos_Scan_Count",   # TODO
+            # "Neg_Scan_Count",   # TODO
+            ]
 
 def process_MGF(input_file, original_path, output_filename):
     parsed_mgf = mgf.read(open(input_file, 'r'))
@@ -38,21 +35,21 @@ def process_MGF(input_file, original_path, output_filename):
     output_dictionary['Vendor'] = ''
     
     # Iterate over the scans and count the number of MS levels
-    ms_level_counts = [0]*10
+    ms_level_counts = [0 for _ in range(MAX_MS_LEVEL)]
     for scan in parsed_mgf:
         scan_ms_level = scan['params'].get('mslevel')
         if scan_ms_level is None:
             # TODO: Add an unknown ms level entry
             continue
         scan_ms_level = int(scan_ms_level)
-        if scan_ms_level >= 10:
-            ms_level_counts[-1] += 1
+        if scan_ms_level >= MAX_MS_LEVEL:
+            ms_level_counts[MAX_MS_LEVEL-1] += 1
         else:
             ms_level_counts[scan_ms_level-1] += 1
             
-    for mslevel in range(1,10):
+    for mslevel in range(1,MAX_MS_LEVEL):
         output_dictionary[f"MS{mslevel}s"] = ms_level_counts[mslevel-1]
-    output_dictionary["MS10+"] = ms_level_counts[-1]
+    output_dictionary[f"MS{MAX_MS_LEVEL}+"] = ms_level_counts[-1]
     
     with open(output_filename, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=HEADERS, delimiter='\t')
@@ -122,9 +119,9 @@ def process_mzXML(input_file, original_path, output_filename):
     all_ms_levels = [x.get('msLevel') for x in all_spectra] # List of ms levels as type str
     # Get counts up to MS 9 and 10+
     ms_level_counts = [all_ms_levels.count(str(x)) for x in range(1,10)] + [sum([int(x) > 9 for x in all_ms_levels])]
-    for mslevel in range(1,10):
+    for mslevel in range(1,MAX_MS_LEVEL):
         output_dictionary[f"MS{mslevel}s"] = ms_level_counts[mslevel-1]
-    output_dictionary["MS10+"] = ms_level_counts[-1]
+    output_dictionary[f"MS{MAX_MS_LEVEL}+"] = ms_level_counts[-1]
     
     with open(output_filename, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=HEADERS, delimiter='\t')
@@ -248,9 +245,9 @@ def process_mzML(input_file, original_path, output_filename, ontology_file):
     all_ms_levels = [x.get('value') for x in all_ms_level_elements] # List of ms levels as type str
     # Get counts up to MS 9 and 10+
     ms_level_counts = [all_ms_levels.count(str(x)) for x in range(1,10)] + [sum([int(x) > 9 for x in all_ms_levels])]
-    for mslevel in range(1,10):
+    for mslevel in range(1,MAX_MS_LEVEL):
         output_dictionary[f"MS{mslevel}s"] = ms_level_counts[mslevel-1]
-    output_dictionary["MS10+"] = ms_level_counts[-1]
+    output_dictionary[f"MS{MAX_MS_LEVEL}+"] = ms_level_counts[-1]
 
     with open(output_filename, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=HEADERS, delimiter='\t')

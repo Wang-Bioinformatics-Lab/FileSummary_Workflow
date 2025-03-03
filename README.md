@@ -1,76 +1,41 @@
-# Nextflow Template
+# Per-File Summarizer
+This workflow provides fast file-level summarization for mzML, mzXML, and MGF files. Please note that MGF files outputs are a little rougher
+due to lack of controlled vocabulary. 
 
-To run the workflow to test simply do
-
+Below are the currently supported summary statistics per file:
 ```
-make run
+"Filename", "Original_Path", "Ion_Source", "Mass_Analyzer", "Mass_Detector", "Model", "Vendor","MS1s", "MS2s", "MS3+"
 ```
 
-To learn NextFlow checkout this documentation:
+If you need more in-depth statistics I recommend you checkout the other workflow: [PerScanSummarizer_Workflow](https://github.com/Wang-Bioinformatics-Lab/PerScanSummarizer_Workflow) which provides detailed information on each scan including rention times, ion mode, and more (at the cost of speed).
 
-https://www.nextflow.io/docs/latest/index.html
 
 ## Installation
 
 You will need to have conda, mamba, and nextflow installed to run things locally. 
 
-## Deployment to GNPS2
 
-In order to deploy, we have a set of deployment tools that will enable deployment to the various gnps2 systems. To run the deployment, you will need the following setup steps completed:
+## Example Usage
+There are two workflows 
+1. *Recommended:* directory_summary_workflow.nf (summarization for large swaths of downloaded data), xml parser or msconvert
+2. *Deprecated:* nf_workflow.nf: Single file summarization (provide the MRI/USI, download, and summarize), xml parser only
 
-1. Checked out of the deployment submodules
-1. Conda environment and dependencies
-1. SSH configuration updated
-
-### Checking out the deployment submodules
-
-use the following commands from the deploy_gnps2 folder. 
-
-You might need to checkout the module, do this by running
-
+### directory_summary_workflow.nf
 ```
-git submodule init
-git submodule update
+nextflow run directory_summary_workflow.nf --xml_parse <true|false> \ # Whether to use the xml summarizer or msConvert
+                                           --input_spectra <input data directory>
 ```
 
-You will also need to specify the user on the server that you've been given that your public key has been associated with. If you want to not enter this every time you do a deployment, you can create a Makefile.credentials file in the deploy_gnps2 folder with the following contents
-
+### nf_workflow.nf (currently deprecated)
 ```
-USERNAME=<enter the username>
+nextflow run nf_workflow.nf --download_usi_filename <usi tsv> \
+                            --cache_directory <download_public_data cache dir> \
+                            --input_spectra <path to additional files and output for download>
 ```
+Note that downloaded files will be output to the path specified by `--input_spectra` and will be summarized in addition to previously downloaded data.
 
-### Deployment Dependencies
-
-You will need to install the dependencies in GNPS2_DeploymentTooling/requirements.txt on your own local machine. 
-
-One way to do this is to use conda to create an environment, for example:
-
-```
-conda create -n deploy python=3.8
-pip install -r GNPS2_DeploymentTooling/requirements.txt
-```
-
-### SSH Configuration
-
-Also update your ssh config file to include the following ssh target:
-
-```
-Host ucr-gnps2-dev
-    Hostname ucr-lemon.duckdns.org
-```
-
-### Deploying to Dev Server
-
-To deploy to development, use the following command, if you don't have your ssh public key installed onto the server, you will not be able to deploy.
-
-```
-make deploy-dev
-```
-
-### Deploying to Production Server
-
-To deploy to production, use the following command, if you don't have your ssh public key installed onto the server, you will not be able to deploy.
-
-```
-make deploy-prod
-```
+## TODOs, Caveats, and Warnings
+* TODO: Summarization of number of positive/negative/unspecified ion mode scans
+    * Currently Covered by [PerScanSummarizer_Workflow](https://github.com/Wang-Bioinformatics-Lab/PerScanSummarizer_Workflow)
+* `nf_workflow` reconsumes files in the `params.input_spectra` directory that are output by the downloads. This is a bug and may lead to non-deterministic
+behavior as `fulesummary_folder` may execute before all files are transfered.
